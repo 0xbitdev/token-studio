@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { WalletGuard } from "@/components/wallet-guard"
+import { useWallet } from "@/lib/wallet-context"
 import { toast } from "sonner"
 
 export default function GeneratePage() {
@@ -29,6 +30,7 @@ export default function GeneratePage() {
   const [tone, setTone] = useState("degen")
   const [safeForWork, setSafeForWork] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [showPreview, setShowPreview] = useState(false)
   const [showDevBuyDialog, setShowDevBuyDialog] = useState(false)
   const [wantDevBuy, setWantDevBuy] = useState<boolean | null>(null)
@@ -37,6 +39,9 @@ export default function GeneratePage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [deployedTokenAddress, setDeployedTokenAddress] = useState("")
   const [showAmountError, setShowAmountError] = useState(false)
+  const [usePrivateKey, setUsePrivateKey] = useState(false)
+  const [privateKeyInput, setPrivateKeyInput] = useState("")
+  const [verificationResult, setVerificationResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [showStyleDialog, setShowStyleDialog] = useState(false)
   const [showToneDialog, setShowToneDialog] = useState(false)
   const [showPicturePrompt, setShowPicturePrompt] = useState(false)
@@ -47,6 +52,16 @@ export default function GeneratePage() {
   const [coverImage, setCoverImage] = useState<string>("/cozy-coffee-shop-banner-degen-aesthetic.jpg")
   const pictureInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
+  // generated metadata
+  const [tokenName, setTokenName] = useState("")
+  const [symbol, setSymbol] = useState("")
+  const [shortDescription, setShortDescription] = useState("")
+  const [longDescription, setLongDescription] = useState("")
+  const [suggestedXBio, setSuggestedXBio] = useState("")
+  const [suggestedFirstTweet, setSuggestedFirstTweet] = useState("")
+  const [pictureError, setPictureError] = useState("")
+  const [coverError, setCoverError] = useState("")
+  const wallet = useWallet()
 
   const styleOptions = [
     { value: "meme", label: "Meme" },
@@ -79,11 +94,167 @@ export default function GeneratePage() {
   ]
 
   const handleGenerate = () => {
+    // call backend API to generate prompts, images and metadata
     setIsGenerating(true)
-    setTimeout(() => {
-      setIsGenerating(false)
-      setShowPreview(true)
-    }, 2000)
+    // start simulated progress
+    setProgress(6)
+    let lastIncrement = 6
+    const incr = () => {
+      // increase faster at first then slow down, cap at 95 while request in flight
+      const delta = lastIncrement < 40 ? 6 : lastIncrement < 70 ? 3 : 1
+      lastIncrement = Math.min(95, lastIncrement + delta)
+      setProgress(lastIncrement)
+    }
+    const interval = setInterval(incr, 700)
+    fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        description,
+        style,
+        tone,
+        safeForWork,
+        picturePrompt: picturePrompt || undefined,
+        coverPrompt: coverPrompt || undefined,
+      }),
+    })
+      .then(async (res) => {
+        const json = await res.json()
+        if (!res.ok) throw new Error(json?.error || "Generation failed")
+
+        // set images if available
+        if (json.pictureImage) setPictureImage(json.pictureImage)
+        if (json.coverImage) setCoverImage(json.coverImage)
+
+        // persist prompts returned from server so we can regenerate later
+        if (json.picturePrompt) setPicturePrompt(json.picturePrompt)
+        if (json.coverPrompt) setCoverPrompt(json.coverPrompt)
+
+        // set metadata
+        if (json.tokenName) setTokenName(json.tokenName)
+        if (json.symbol) setSymbol(json.symbol)
+        if (json.shortDescription) setShortDescription(json.shortDescription)
+        if (json.longDescription) setLongDescription(json.longDescription)
+
+  // set social suggestions
+  if (json.suggestedXBio) setSuggestedXBio(json.suggestedXBio)
+  if (json.suggestedFirstTweet) setSuggestedFirstTweet(json.suggestedFirstTweet)
+
+  // set any image errors for UI banner
+  setPictureError(json.pictureError || "")
+  setCoverError(json.coverError || "")
+
+        setShowPreview(true)
+      })
+      .catch((err) => {
+        console.error(err)
+        toast.error("Generate failed", { description: String(err?.message || err) })
+      })
+      .finally(() => {
+        // finish progress
+        setProgress(100)
+        clearInterval(interval)
+        // give a short delay so user sees completion
+        setTimeout(() => {
+          setIsGenerating(false)
+          // reset progress after a brief pause
+          setTimeout(() => setProgress(0), 500)
+        }, 400)
+      })
+  }
+
+  const regeneratePicture = (overridePrompt?: string) => {
+    // generate only the picture image using the last prompt or provided override
+    setIsGenerating(true)
+    setProgress(6)
+    let lastIncrement = 6
+    const incr = () => {
+      const delta = lastIncrement < 40 ? 6 : lastIncrement < 70 ? 3 : 1
+      lastIncrement = Math.min(95, lastIncrement + delta)
+      setProgress(lastIncrement)
+    }
+    const interval = setInterval(incr, 700)
+
+    fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "image-only",
+        imageType: "picture",
+        picturePrompt: overridePrompt || picturePrompt,
+        description,
+        style,
+        tone,
+        safeForWork,
+      }),
+    })
+      .then(async (res) => {
+        const json = await res.json()
+        if (!res.ok) throw new Error(json?.error || "Picture regeneration failed")
+        if (json.pictureImage) setPictureImage(json.pictureImage)
+        setPictureError(json.pictureError || "")
+        if (json.picturePrompt) setPicturePrompt(json.picturePrompt)
+        setShowPreview(true)
+      })
+      .catch((err) => {
+        console.error(err)
+        toast.error("Picture regenerate failed", { description: String(err?.message || err) })
+      })
+      .finally(() => {
+        setProgress(100)
+        clearInterval(interval)
+        setTimeout(() => {
+          setIsGenerating(false)
+          setTimeout(() => setProgress(0), 500)
+        }, 400)
+      })
+  }
+
+  const regenerateCover = (overridePrompt?: string) => {
+    setIsGenerating(true)
+    setProgress(6)
+    let lastIncrement = 6
+    const incr = () => {
+      const delta = lastIncrement < 40 ? 6 : lastIncrement < 70 ? 3 : 1
+      lastIncrement = Math.min(95, lastIncrement + delta)
+      setProgress(lastIncrement)
+    }
+    const interval = setInterval(incr, 700)
+
+    fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "image-only",
+        imageType: "cover",
+        coverPrompt: overridePrompt || coverPrompt,
+        size: "1500x500",
+        description,
+        style,
+        tone,
+        safeForWork,
+      }),
+    })
+      .then(async (res) => {
+        const json = await res.json()
+        if (!res.ok) throw new Error(json?.error || "Cover regeneration failed")
+        if (json.coverImage) setCoverImage(json.coverImage)
+        setCoverError(json.coverError || "")
+        if (json.coverPrompt) setCoverPrompt(json.coverPrompt)
+        setShowPreview(true)
+      })
+      .catch((err) => {
+        console.error(err)
+        toast.error("Cover regenerate failed", { description: String(err?.message || err) })
+      })
+      .finally(() => {
+        setProgress(100)
+        clearInterval(interval)
+        setTimeout(() => {
+          setIsGenerating(false)
+          setTimeout(() => setProgress(0), 500)
+        }, 400)
+      })
   }
 
   const handleDeployClick = () => {
@@ -94,22 +265,118 @@ export default function GeneratePage() {
   }
 
   const handleDevBuyConfirm = () => {
-    if (wantDevBuy && !devBuyAmount) {
-      setShowAmountError(true)
-      setTimeout(() => setShowAmountError(false), 3000)
-      return
-    }
+    ;(async () => {
+      if (wantDevBuy && !devBuyAmount) {
+        setShowAmountError(true)
+        setTimeout(() => setShowAmountError(false), 3000)
+        return
+      }
 
-    setIsDeploying(true)
+  // use wallet from hook (declared at top)
+  // const wallet = useWallet()
 
-    setTimeout(() => {
-      setIsDeploying(false)
-      setShowDevBuyDialog(false)
+      // Basic validation of required metadata
+      const missing: string[] = []
+      if (!tokenName) missing.push("Token Name")
+      if (!symbol) missing.push("Symbol")
+      if (!longDescription) missing.push("Long Description / Lore")
+      if (!pictureImage) missing.push("Picture")
+      if (!coverImage) missing.push("Cover")
 
-      const mockTokenAddress = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
-      setDeployedTokenAddress(mockTokenAddress)
-      setShowSuccessDialog(true)
-    }, 2000)
+      if (missing.length) {
+        toast.error("Please complete metadata before deploying:", { description: missing.join(", ") })
+        return
+      }
+
+      if (!usePrivateKey) {
+        if (!wallet.connected || !wallet.publicKey) {
+          toast.error("Wallet not connected", { description: "Please connect your wallet before deploying" })
+          return
+        }
+      }
+
+      setIsDeploying(true)
+
+      try {
+        // Prepare metadata to sign
+        const metadata = {
+          tokenName,
+          symbol,
+          shortDescription,
+          longDescription,
+          suggestedXBio,
+          suggestedFirstTweet,
+        }
+
+        const message = JSON.stringify({ metadata, timestamp: Date.now() })
+
+        // Sign message with wallet (if not using private key). Convert signature to base64 for transport.
+        let signatureBase64: string | undefined = undefined
+        if (!usePrivateKey && wallet.connected && wallet.publicKey) {
+          const signed = await wallet.signMessage(message)
+          if (!signed) throw new Error("Failed to sign deployment payload")
+
+          // signed may be a Uint8Array-like view or an object with a `signature` property.
+          // Use ArrayBuffer.isView to safely detect typed array / Uint8Array values in TS.
+          let sigBytes: Uint8Array
+          if (ArrayBuffer.isView(signed as any)) {
+            sigBytes = signed as unknown as Uint8Array
+          } else if ((signed as any)?.signature) {
+            sigBytes = (signed as any).signature as Uint8Array
+          } else {
+            throw new Error("Unexpected signature format from wallet")
+          }
+
+          // convert to base64
+          try {
+            signatureBase64 = btoa(String.fromCharCode(...Array.from(sigBytes)))
+          } catch (e) {
+            // fallback using Buffer if available
+            signatureBase64 = typeof Buffer !== "undefined" ? Buffer.from(sigBytes).toString("base64") : undefined
+          }
+          if (!signatureBase64) throw new Error("Failed to encode signature")
+        }
+
+        // Send to server deploy endpoint
+        const res = await fetch("/api/deploy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...metadata,
+            pictureImage,
+            coverImage,
+            suggestedXBio,
+            suggestedFirstTweet,
+            publicKey: wallet.publicKey || undefined,
+            signature: signatureBase64 || undefined,
+            signedMessage: message,
+            privateKey: usePrivateKey ? privateKeyInput : undefined,
+            devBuyAmount: wantDevBuy ? devBuyAmount : undefined,
+          }),
+        })
+
+  const json = await res.json()
+  if (!res.ok) throw new Error(json?.error || "Deploy failed")
+
+  // If server returned created token address, set success. Many Pump.fun responses
+  // return a token id or address in various fields; try a few common ones.
+  const tokenAddress = json.result?.address || json.result?.tokenAddress || json.result?.id || json.ok?.id || json.raw?.id
+  if (tokenAddress) setDeployedTokenAddress(String(tokenAddress))
+
+  // Capture server-side verification result (if present) so we can show it in the UI
+  if (json.verification) setVerificationResult(json.verification)
+  else setVerificationResult(null)
+
+  setShowDevBuyDialog(false)
+  setShowSuccessDialog(true)
+  toast.success("Deployment request submitted")
+      } catch (err: any) {
+        console.error("deploy error", err)
+        toast.error("Deploy failed", { description: String(err?.message || err) })
+      } finally {
+        setIsDeploying(false)
+      }
+    })()
   }
 
   const handlePictureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -229,6 +496,22 @@ export default function GeneratePage() {
                   "Generate & Create"
                 )}
               </Button>
+              {/* Progress bar shown while generating */}
+              {isGenerating && (
+                <div className="mt-3">
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-primary to-[#22C55E] transition-all"
+                      style={{ width: `${progress}%` }}
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={progress}
+                    />
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">{progress < 100 ? `Generating ${progress}%` : "Finalizing..."}</div>
+                </div>
+              )}
             </div>
           </Card>
 
@@ -237,6 +520,20 @@ export default function GeneratePage() {
             <Card className="p-4 md:p-6 shadow-lg">
               <div className="space-y-6 md:space-y-8">
                 <h2 className="text-xl md:text-2xl font-bold tracking-tight">GENERATE & CREATE</h2>
+
+                  { (pictureError || coverError) && (
+                    <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-900 text-red-700">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                      <div className="text-sm">
+                        <div className="font-semibold">Image generation warning</div>
+                        <div className="mt-1">
+                          {pictureError && <div><strong>Picture:</strong> {pictureError}</div>}
+                          {coverError && <div><strong>Cover:</strong> {coverError}</div>}
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">Images may still show a fallback so you can continue. Try regenerating or upload your own image.</div>
+                      </div>
+                    </div>
+                  ) }
 
                 {/* Images */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -276,7 +573,8 @@ export default function GeneratePage() {
                           <Button
                             size="sm"
                             onClick={() => {
-                              toast.success("Generating image...", { description: picturePrompt })
+                              // trigger picture regeneration with the custom prompt
+                              regeneratePicture(picturePrompt)
                               setShowPicturePrompt(false)
                             }}
                             className="w-full bg-primary hover:bg-[#22C55E]"
@@ -287,7 +585,7 @@ export default function GeneratePage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
-                        <Button variant="outline" size="sm" className="w-full bg-transparent">
+                        <Button variant="outline" size="sm" onClick={() => regeneratePicture()} className="w-full bg-transparent">
                           <RefreshCw className="w-4 h-4 sm:mr-2" />
                           <span className="hidden sm:inline">Regenerate</span>
                         </Button>
@@ -349,7 +647,8 @@ export default function GeneratePage() {
                           <Button
                             size="sm"
                             onClick={() => {
-                              toast.success("Generating cover...", { description: coverPrompt })
+                              // trigger cover regeneration with custom prompt and requested banner size
+                              regenerateCover(coverPrompt)
                               setShowCoverPrompt(false)
                             }}
                             className="w-full bg-primary hover:bg-[#22C55E]"
@@ -360,7 +659,7 @@ export default function GeneratePage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
-                        <Button variant="outline" size="sm" className="w-full bg-transparent">
+                        <Button variant="outline" size="sm" onClick={() => regenerateCover()} className="w-full bg-transparent">
                           <RefreshCw className="w-4 h-4 sm:mr-2" />
                           <span className="hidden sm:inline">Regenerate</span>
                         </Button>
@@ -391,21 +690,22 @@ export default function GeneratePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="token-name">Token Name</Label>
-                    <Input id="token-name" defaultValue="Degen Cat Barista" />
+                    <Input id="token-name" value={tokenName || "Degen Cat Barista"} onChange={(e) => setTokenName(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="symbol">Symbol</Label>
-                    <Input id="symbol" defaultValue="DCAT" />
+                    <Input id="symbol" value={symbol || "DCAT"} onChange={(e) => setSymbol(e.target.value)} />
                   </div>
                   <div className="col-span-full space-y-2">
                     <Label htmlFor="short-desc">Short Description</Label>
-                    <Input id="short-desc" defaultValue="The coziest degen token on Solana" />
+                    <Input id="short-desc" value={shortDescription || "The coziest degen token on Solana"} onChange={(e) => setShortDescription(e.target.value)} />
                   </div>
                   <div className="col-span-full space-y-2">
                     <Label htmlFor="long-desc">Long Description / Lore</Label>
                     <Textarea
                       id="long-desc"
-                      defaultValue="Meet Degen Cat, your favorite barista on Solana. Born in the depths of a coffee shop during a 48-hour hackathon, this token represents every overworked freelancer, developer, and creator who runs on pure caffeine and degen energy."
+                      value={longDescription || "Meet Degen Cat, your favorite barista on Solana. Born in the depths of a coffee shop during a 48-hour hackathon, this token represents every overworked freelancer, developer, and creator who runs on pure caffeine and degen energy."}
+                      onChange={(e) => setLongDescription(e.target.value)}
                       className="min-h-[100px]"
                     />
                   </div>
@@ -429,17 +729,15 @@ export default function GeneratePage() {
                   <div className="space-y-4">
                     <div>
                       <div className="text-sm font-medium mb-2">Suggested X Bio</div>
-                      <p className="text-sm text-muted-foreground">
-                        ☕ Degen Cat Barista | Brewing gains on Solana | For the overworked & caffeinated | Not
-                        financial advice, just vibes
-                      </p>
+                      <p className="text-sm text-muted-foreground">{suggestedXBio || (
+                        <>☕ Degen Cat Barista | Brewing gains on Solana | For the overworked & caffeinated | Not financial advice, just vibes</>
+                      )}</p>
                     </div>
                     <div>
                       <div className="text-sm font-medium mb-2">Suggested First Tweet</div>
-                      <p className="text-sm text-muted-foreground">
-                        gm ☕ Degen Cat Barista is now live on @pumpdotfun! 🚀 We're here for every freelancer, dev, and
-                        creator running on coffee and dreams. Join the coziest degen community on Solana. LFG! 🐱💚
-                      </p>
+                      <p className="text-sm text-muted-foreground">{suggestedFirstTweet || (
+                        <>gm ☕ Degen Cat Barista is now live on @pumpdotfun! 🚀 We're here for every freelancer, dev, and creator running on coffee and dreams. Join the coziest degen community on Solana. LFG! 🐱💚</>
+                      )}</p>
                     </div>
                   </div>
                 </Card>
@@ -580,6 +878,29 @@ export default function GeneratePage() {
                   </p>
                 </div>
               )}
+
+              <div className="border-t pt-4">
+                <Label className="text-sm font-semibold">Advanced: Private Key (optional)</Label>
+                <div className="flex items-start gap-2 mt-2">
+                  <Checkbox id="use-pk" checked={usePrivateKey} onCheckedChange={(v) => setUsePrivateKey(Boolean(v))} />
+                  <div className="text-sm">
+                    <div className="font-medium">Provide private key for server-side minting</div>
+                    <div className="text-xs text-muted-foreground">Only enable if you understand the security risk. Wallet extensions do not expose private keys.</div>
+                  </div>
+                </div>
+
+                {usePrivateKey && (
+                  <div className="mt-3">
+                    <Textarea
+                      placeholder="Paste private key here (KEEP SECRET)"
+                      value={privateKeyInput}
+                      onChange={(e) => setPrivateKeyInput(e.target.value)}
+                      className="min-h-[80px]"
+                    />
+                    <div className="text-xs text-red-600 mt-2">Warning: Do not share this key. Storing/transmitting private keys is insecure. Use at your own risk.</div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0">
@@ -626,6 +947,26 @@ export default function GeneratePage() {
                   <code className="text-sm flex-1 break-all font-mono">{deployedTokenAddress}</code>
                 </div>
               </div>
+
+              {verificationResult ? (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Signature verification
+                  </Label>
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+                    {verificationResult.ok ? (
+                      <div className="rounded-full bg-green-100 p-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      </div>
+                    ) : (
+                      <div className="rounded-full bg-red-100 p-2">
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                      </div>
+                    )}
+                    <div className="text-sm">{verificationResult.message}</div>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="space-y-3">
                 <Label className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
