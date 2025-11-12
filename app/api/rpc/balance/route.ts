@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server"
 
-// Permissive CORS headers so front-end on a custom domain can call this endpoint
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-}
+// Force Node runtime on Vercel
+export const runtime = "nodejs"
+
+// No CORS handling — removed per request
 
 type ReqBody = {
   publicKey?: string
@@ -16,7 +14,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as ReqBody
     const publicKey = body?.publicKey
     if (!publicKey) {
-      return NextResponse.json({ error: "Missing publicKey in request body" }, { status: 400, headers: CORS_HEADERS })
+      return NextResponse.json({ error: "Missing publicKey in request body" }, { status: 400 })
     }
 
     // Server-side RPC URL and optional API key
@@ -43,16 +41,16 @@ export async function POST(req: Request) {
     }
 
     if (!rpcRes.ok) {
-      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502, headers: CORS_HEADERS })
+      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502 })
     }
 
-    return NextResponse.json({ ok: true, status: rpcRes.status, result: data }, { headers: CORS_HEADERS })
+    return NextResponse.json({ ok: true, status: rpcRes.status, result: data })
   } catch (err: any) {
     console.error("/api/rpc/balance error", err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
 
 export async function OPTIONS(req: Request) {
-  return new Response(null, { status: 200, headers: CORS_HEADERS })
+  return new Response(null, { status: 200 })
 }

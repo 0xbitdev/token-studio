@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server"
 
-// Permissive CORS for easier cross-origin usage (mirrors local dev behavior)
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-}
+// Force Node runtime on Vercel so Node-only modules (sharp, Buffer) work
+export const runtime = "nodejs"
+
+// No CORS handling — removed per request
 import sharp from "sharp"
 
 type ReqBody = {
@@ -175,7 +173,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as ReqBody
 
     const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500, headers: CORS_HEADERS })
+  if (!apiKey) return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
 
     // Support image-only requests (regenerate a single image) to avoid calling the chat model.
     const isImageOnly = (body as any).action === "image-only"
@@ -255,14 +253,14 @@ export async function POST(req: Request) {
       rawParsed: parsed,
     }
 
-    return NextResponse.json(resp, { headers: CORS_HEADERS })
+    return NextResponse.json(resp)
   } catch (err: any) {
     console.error(err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
 
 // Respond to preflight OPTIONS from browsers
 export async function OPTIONS(req: Request) {
-  return new Response(null, { status: 200, headers: CORS_HEADERS })
+  return new Response(null, { status: 200 })
 }

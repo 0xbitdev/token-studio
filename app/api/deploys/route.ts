@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server"
+
+// Force Node runtime on Vercel for DB access via `pg`
+export const runtime = "nodejs"
+
 import { Client } from "pg"
 
 export async function GET(req: Request) {
