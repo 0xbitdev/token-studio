@@ -170,10 +170,30 @@ async function generateImage(prompt: string, apiKey: string, size?: string) {
 
 export async function POST(req: Request) {
   try {
+    // lightweight diagnostics: log method and a short preview of headers so we can
+    // confirm requests reach this function on hosting.
+    try {
+      console.info(`/api/generate POST invoked - headers: ${JSON.stringify(Object.fromEntries(req.headers.entries()))}`)
+    } catch (e) {
+      // ignore logging errors
+    }
+
     const body = (await req.json()) as ReqBody
 
+    // Quick ping path for remote testing: send { "ping": true } in the body to
+    // receive an immediate JSON response. This helps determine whether the POST
+    // reaches the deployed function (useful when debugging 405 from proxies).
+    try {
+      const anyBody: any = body as any
+      if (anyBody?.ping === true) {
+        return NextResponse.json({ ok: true, ping: true, timestamp: Date.now() })
+      }
+    } catch (e) {
+      // ignore parse errors for ping
+    }
+
     const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
+    if (!apiKey) return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
 
     // Support image-only requests (regenerate a single image) to avoid calling the chat model.
     const isImageOnly = (body as any).action === "image-only"
