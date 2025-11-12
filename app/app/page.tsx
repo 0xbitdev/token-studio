@@ -57,7 +57,7 @@ const launchpads = [
   { name: "Pump.fun", logo: "/launchpads/pumpfun.png", url: "https://pump.fun", available: true },
   { name: "Moonit", logo: "/launchpads/moonit.png", url: "https://moonshot.com", available: false },
   { name: "Bonk", logo: "/launchpads/bonk.png", url: "https://bonk.com", available: false },
-  { name: "Heaven", logo: "/launchpads/heaven.png", url: "https://heaven.com", available: false },
+  { name: "Heaven", logo: "/launchpads/heven.png", url: "https://heaven.com", available: false },
   { name: "Believe", logo: "/launchpads/belive.png", url: "https://believe.com", available: false },
   { name: "Boop", logo: "/launchpads/boop.png", url: "https://boop.com", available: false },
   { name: "Bags", logo: "/launchpads/bags.png", url: "https://bags.com", available: false },
