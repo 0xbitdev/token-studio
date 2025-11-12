@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AI Token Studio - Create Tokens for Pump.fun",
+  title: "Launch Token - Create Tokens for Pump.fun",
   description: "AI-powered token creation and deployment for Pump.fun creators",
   generator: "v0.app",
   icons: {

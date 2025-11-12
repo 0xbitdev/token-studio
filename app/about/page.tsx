@@ -1,21 +1,17 @@
-import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ArrowRight, Sparkles, Rocket, Shield, Zap, TrendingUp, Lock } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-export default function HomePage() {
-  redirect("/app")
-
-  // The rest of the code here is kept for reference but not used due to the redirect
+export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="text-xl font-bold tracking-tight">AI TOKEN STUDIO</div>
+            <div className="text-xl font-bold tracking-tight">LAUNCH TOKEN</div>
             <div className="flex items-center gap-4">
               <ThemeToggle />
               <Link
@@ -31,7 +27,7 @@ export default function HomePage() {
                 FEATURES
               </Link>
               <Button asChild className="rounded-full bg-primary hover:bg-[#22C55E]">
-                <Link href="/app/generate">LAUNCH APP</Link>
+                <Link href="/app">GO TO APP</Link>
               </Button>
             </div>
           </div>
@@ -44,15 +40,15 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-balance">
-                AI Token Studio for Pump.fun Creators
+                Launch Token for Pump.fun Creators
               </h1>
               <p className="text-lg sm:text-xl text-muted-foreground text-pretty leading-relaxed">
                 Describe your idea. Get instant name, ticker, lore, logo, banner, and one-click deploy to Pump.fun.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button asChild size="lg" className="rounded-full bg-primary hover:bg-[#22C55E] text-base">
-                  <Link href="/app/generate">
-                    Launch App <ArrowRight className="ml-2 h-5 w-5" />
+                  <Link href="/app">
+                    Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="rounded-full text-base bg-transparent">
@@ -179,7 +175,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">FOR CREATORS</h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            AI Token Studio is a helper tool designed to accelerate your creative process. You always sign transactions
+            Launch Token is a helper tool designed to accelerate your creative process. You always sign transactions
             with your own wallet, maintaining complete control over your assets. This platform is not financial
             advice—create responsibly and have fun building the next generation of tokens on Solana.
           </p>
@@ -193,8 +189,8 @@ export default function HomePage() {
             Ready to Launch Your Next Degen Masterpiece?
           </h2>
           <Button asChild size="lg" className="rounded-full bg-primary hover:bg-[#22C55E] text-lg px-8">
-            <Link href="/app/generate">
-              Open AI Token Studio <ArrowRight className="ml-2 h-5 w-5" />
+            <Link href="/app">
+              Open Dashboard <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
         </div>
@@ -204,7 +200,7 @@ export default function HomePage() {
       <footer className="border-t border-border py-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-muted-foreground">© 2025 AI Token Studio. Not financial advice.</div>
+            <div className="text-sm text-muted-foreground">© 2025 Launch Token. Not financial advice.</div>
             <div className="flex gap-6 text-sm">
               <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
                 X

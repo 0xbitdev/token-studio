@@ -14,8 +14,11 @@ import {
   Crown,
   Wrench,
   ChevronDown,
+  Gem,
+  Info,
 } from "lucide-react"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
 
 const XIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -71,8 +74,8 @@ export function Sidebar() {
             <Sparkles className="w-6 h-6 text-white" strokeWidth={2.5} />
           </div>
           <div>
-            <div className="text-lg font-bold tracking-tight text-foreground">AI Token</div>
-            <div className="text-xs font-medium tracking-wider text-green-600 uppercase">Studio</div>
+            <div className="text-lg font-bold tracking-tight text-foreground">Launch</div>
+            <div className="text-xs font-medium tracking-wider text-green-600 uppercase">Token</div>
           </div>
         </div>
       </div>
@@ -102,9 +105,7 @@ export function Sidebar() {
                 <span className="flex-1">{item.name}</span>
               </Link>
               {item.isPro && (
-                <span className="absolute -top-1 -right-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-md shadow-lg">
-                  EXCLUSIVE
-                </span>
+                <Gem className="absolute top-2 right-2 w-5 h-5 text-orange-500 drop-shadow-md" strokeWidth={2.5} />
               )}
             </div>
           )
@@ -122,9 +123,7 @@ export function Sidebar() {
           </button>
 
           {devToolsMenu.isPro && (
-            <span className="absolute -top-1 -right-1 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-md shadow-lg">
-              EXCLUSIVE
-            </span>
+            <Gem className="absolute top-2 right-2 w-5 h-5 text-orange-500 drop-shadow-md" strokeWidth={2.5} />
           )}
 
           {/* Submenu */}
@@ -160,6 +159,13 @@ export function Sidebar() {
             <span className="text-sm font-medium">{userPlan} Plan</span>
           </div>
         </div>
+
+        <Button asChild variant="outline" className="w-full rounded-lg bg-transparent" size="sm">
+          <Link href="/about" className="flex items-center justify-center gap-2">
+            <Info className="w-4 h-4" />
+            About
+          </Link>
+        </Button>
 
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Connect</div>
         <div className="flex items-center gap-2">
