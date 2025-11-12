@@ -62,22 +62,60 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const provider = type === "phantom" ? (window as any).solana : (window as any).solflare
 
       if (!provider) {
-        toast.error(`${type === "phantom" ? "Phantom" : "Solflare"} wallet not found`, {
-          description: "Please install the wallet extension to continue",
-        })
-        window.open(type === "phantom" ? "https://phantom.app/download" : "https://solflare.com/download", "_blank")
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+        if (isMobile) {
+          // On mobile, open the wallet app with deep link
+          const currentUrl = encodeURIComponent(window.location.href)
+          const deepLink =
+            type === "phantom"
+              ? `https://phantom.app/ul/browse/${currentUrl}?ref=${window.location.origin}`
+              : `https://solflare.com/ul/v1/browse/${currentUrl}?ref=${window.location.origin}`
+
+          toast.error(`${type === "phantom" ? "Phantom" : "Solflare"} wallet not detected`, {
+            description: "Opening wallet app...",
+          })
+          window.location.href = deepLink
+        } else {
+          toast.error(`${type === "phantom" ? "Phantom" : "Solflare"} wallet not found`, {
+            description: "Please install the wallet extension to continue",
+          })
+          window.open(type === "phantom" ? "https://phantom.app/download" : "https://solflare.com/download", "_blank")
+        }
         setConnecting(false)
         return
       }
 
-      // Connect to wallet
-      const response = await provider.connect()
+      // Show connecting toast
+      toast.loading("Connecting wallet...", {
+        description: "Please approve the connection in your wallet",
+        id: "wallet-connect",
+      })
+
+      // Connect to wallet with timeout
+      const connectPromise = provider.connect({ onlyIfTrusted: false })
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Connection timeout")), 60000),
+      )
+
+      const response = (await Promise.race([connectPromise, timeoutPromise])) as any
       const pubKey = response.publicKey.toString()
 
       // Request signature for authentication
-      const message = `Sign this message to authenticate with Launch Token\n\nTimestamp: ${Date.now()}`
+      toast.loading("Waiting for signature...", {
+        description: "Please sign the message in your wallet to verify ownership",
+        id: "wallet-connect",
+      })
+
+      const message = `Sign this message to authenticate with Launch Token\n\nWallet: ${pubKey.slice(0, 8)}...${pubKey.slice(-8)}\nTimestamp: ${Date.now()}\n\nThis signature is free and will not send any transaction.`
       const encodedMessage = new TextEncoder().encode(message)
-      const signedMessage = await provider.signMessage(encodedMessage, "utf8")
+
+      const signPromise = provider.signMessage(encodedMessage, "utf8")
+      const signTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Signature timeout")), 60000),
+      )
+
+      const signedMessage = await Promise.race([signPromise, signTimeoutPromise])
 
       if (signedMessage) {
         setPublicKey(pubKey)
@@ -85,16 +123,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setConnected(true)
         localStorage.setItem("walletType", type)
         localStorage.setItem("walletPublicKey", pubKey)
-        fetchBalance(pubKey) // Fetch balance after connection
+        await fetchBalance(pubKey)
+
         toast.success("Wallet connected successfully!", {
-          description: `Connected to ${pubKey.slice(0, 4)}...${pubKey.slice(-4)}`,
+          description: `${pubKey.slice(0, 4)}...${pubKey.slice(-4)}`,
+          id: "wallet-connect",
         })
       }
     } catch (error: any) {
       console.error("Wallet connection error:", error)
-      if (error.code === 4001) {
+      toast.dismiss("wallet-connect")
+
+      if (error.code === 4001 || error.message?.includes("rejected")) {
         toast.error("Connection rejected", {
           description: "You rejected the connection request",
+        })
+      } else if (error.message?.includes("timeout")) {
+        toast.error("Connection timeout", {
+          description: "Please try again and approve the request in your wallet",
         })
       } else {
         toast.error("Failed to connect wallet", {
