@@ -4,7 +4,24 @@ import { NextResponse } from "next/server"
 export const runtime = "nodejs"
 
 // No CORS handling — removed per request
-import sharp from "sharp"
+// Do not import sharp at module load time to avoid crashes on platforms where
+// the native libvips binary is missing (e.g. some serverless environments).
+// We'll dynamically import it at runtime when needed and gracefully fallback
+// if the import fails so the route doesn't crash during module evaluation.
+let _sharp: any | false | null = null
+async function maybeLoadSharp() {
+  if (_sharp !== null) return _sharp
+  try {
+    const mod = await import("sharp")
+    _sharp = mod.default || mod
+    return _sharp
+  } catch (err) {
+    // Mark as false so we don't repeatedly attempt to import on each request
+    console.warn("sharp not available; continuing without server-side resize", err)
+    _sharp = false
+    return null
+  }
+}
 
 type ReqBody = {
   description: string
@@ -126,7 +143,7 @@ async function generateImage(prompt: string, apiKey: string, size?: string) {
   // helper to convert buffer -> resized data URL
   const resizeTo = requestedSize
 
-  const bufferToDataUrl = async (buffer: Buffer, contentType = "image/png") => {
+    const bufferToDataUrl = async (buffer: Buffer, contentType = "image/png") => {
     if (resizeTo) {
       // parse size like '1500x500'
       const match = String(resizeTo).match(/(\d+)x(\d+)/)
@@ -134,8 +151,14 @@ async function generateImage(prompt: string, apiKey: string, size?: string) {
         const w = parseInt(match[1], 10)
         const h = parseInt(match[2], 10)
         try {
-          buffer = await sharp(buffer).resize(w, h, { fit: "cover" }).png().toBuffer()
-          contentType = "image/png"
+          const s = await maybeLoadSharp()
+          if (s) {
+            buffer = await s(buffer).resize(w, h, { fit: "cover" }).png().toBuffer()
+            contentType = "image/png"
+          } else {
+            // sharp unavailable: log once and continue with original buffer
+            console.warn("sharp unavailable: skipping server-side resize")
+          }
         } catch (err) {
           console.error("sharp resize error", err)
           // if sharp fails, continue with original buffer
