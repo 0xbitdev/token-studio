@@ -60,7 +60,10 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
               <Button
                 onClick={async () => {
                   await connect("phantom")
-                  setShowWalletDialog(false)
+                  // Only close dialog if connection successful (will be handled by context)
+                  if (!connecting) {
+                    setShowWalletDialog(false)
+                  }
                 }}
                 disabled={connecting}
                 className="w-full justify-start h-auto py-4 px-4 bg-card hover:bg-accent border border-border"
@@ -69,7 +72,7 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-3 flex-1">
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
                     <Image
-                      src="/images/design-mode/phantom.png"
+                      src="/wallets/phantom.png"
                       alt="Phantom"
                       width={40}
                       height={40}
@@ -78,7 +81,9 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="flex-1 text-left">
                     <div className="font-semibold text-foreground">Phantom</div>
-                    <div className="text-xs text-muted-foreground">Connect with Phantom wallet</div>
+                    <div className="text-xs text-muted-foreground">
+                      {connecting ? "Connecting..." : "Connect with Phantom wallet"}
+                    </div>
                   </div>
                 </div>
               </Button>
@@ -86,7 +91,9 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
               <Button
                 onClick={async () => {
                   await connect("solflare")
-                  setShowWalletDialog(false)
+                  if (!connecting) {
+                    setShowWalletDialog(false)
+                  }
                 }}
                 disabled={connecting}
                 className="w-full justify-start h-auto py-4 px-4 bg-card hover:bg-accent border border-border"
@@ -95,7 +102,7 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-3 flex-1">
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
                     <Image
-                      src="/images/design-mode/solflare.png"
+                      src="/wallets/solflare.png"
                       alt="Solflare"
                       width={40}
                       height={40}
@@ -104,7 +111,9 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="flex-1 text-left">
                     <div className="font-semibold text-foreground">Solflare</div>
-                    <div className="text-xs text-muted-foreground">Connect with Solflare wallet</div>
+                    <div className="text-xs text-muted-foreground">
+                      {connecting ? "Connecting..." : "Connect with Solflare wallet"}
+                    </div>
                   </div>
                 </div>
               </Button>
@@ -112,8 +121,9 @@ export function WalletGuard({ children }: { children: React.ReactNode }) {
             <div className="flex items-start gap-2 p-3 rounded-lg bg-muted">
               <AlertCircle className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
               <p className="text-xs text-muted-foreground">
-                You'll be asked to sign a message to verify wallet ownership. This is free and doesn't involve any
-                transactions.
+                {connecting
+                  ? "Please check your wallet app and approve the connection and signature requests."
+                  : "You'll be asked to connect your wallet and sign a message to verify ownership. This is free and doesn't involve any transactions."}
               </p>
             </div>
           </DialogContent>
