@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
 
+
 interface WalletContextType {
   connected: boolean
   publicKey: string | null
@@ -37,7 +38,72 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const fetchBalance = async (pubKey: string) => {
     try {
-      const response = await fetch(`https://api.mainnet-beta.solana.com`, {
+      // First, try to ask the injected wallet provider (Phantom / Solflare) for balance
+      // This reduces reliance on public RPC endpoints that may return 403.
+      const provider = (window as any).solana || (window as any).solflare
+      if (provider) {
+        try {
+          // Some providers may expose a helper like getBalance(pubKey)
+          if (typeof provider.getBalance === "function") {
+            const bal = await provider.getBalance(pubKey)
+            if (typeof bal === "number") {
+              setBalance(bal / 1e9)
+              return
+            }
+            // If provider returned an object like { value: lamports }
+            if (bal && typeof bal.value === "number") {
+              setBalance(bal.value / 1e9)
+              return
+            }
+          }
+
+          // Many wallet providers implement a generic request proxy which will forward
+          // JSON-RPC calls to their configured RPC node. Try that next.
+          if (typeof provider.request === "function") {
+            const provResp = await provider.request({ method: "getBalance", params: [pubKey] })
+            // provResp might be number of lamports, or an object
+            if (provResp != null) {
+              // If provider returned JSON-RPC style { result: { value } }
+              const value = provResp?.result?.value ?? provResp?.value ?? provResp
+              if (typeof value === "number") {
+                setBalance(value / 1e9)
+                return
+              }
+            }
+          }
+        } catch (provErr) {
+          console.warn("Wallet provider balance fetch failed, falling back to RPC:", provErr)
+          // continue to fallback RPC below
+        }
+      }
+
+      // Try server-side proxy first (avoids exposing API key and reduces public RPC 403 rates)
+      try {
+        const proxyRes = await fetch("/api/rpc/balance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicKey: pubKey }),
+        })
+        const proxyJson = await proxyRes.json()
+        if (proxyRes.ok && proxyJson?.result) {
+          // Our proxy returns { ok: true, status, result: <rpcResponse> }
+          const rpcData = proxyJson.result
+          const value = rpcData?.result?.value ?? rpcData?.value ?? rpcData?.raw?.result?.value ?? rpcData?.raw?.value
+          if (typeof value === "number") {
+            setBalance(value / 1e9)
+            return
+          }
+        }
+      } catch (proxyErr) {
+        console.warn("Server proxy /api/rpc/balance failed, falling back to client RPC:", proxyErr)
+        // continue to client RPC fallback
+      }
+
+      // Fallback: call a configurable RPC endpoint. Use NEXT_PUBLIC_SOLANA_RPC on client-side.
+      // Public endpoints may be rate-limited or return 403; allow overriding.
+      const rpcUrl = (process.env.NEXT_PUBLIC_SOLANA_RPC as string) || "https://api.mainnet-beta.solana.com"
+
+      const response = await fetch(rpcUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -48,6 +114,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         }),
       })
       const data = await response.json()
+
+      // Handle common JSON-RPC error responses (e.g. provider blocked / rate-limited)
+      if (data?.error) {
+        // If provider returns 403 / Access forbidden, inform the user and bail out
+        if (data.error?.code === 403 || String(data.error?.message || "").toLowerCase().includes("forbidden")) {
+          console.warn("Solana RPC access forbidden", data.error)
+          toast.error("Solana RPC access forbidden or rate-limited; RPC provider blocked the request.", {
+            description:
+              "Try setting NEXT_PUBLIC_SOLANA_RPC to a working RPC endpoint (e.g. a QuickNode/Helius RPC) or connect your wallet to fetch balance.",
+          })
+          return
+        }
+        console.warn("Solana RPC returned an error", data.error)
+        return
+      }
+
       if (data.result?.value) {
         setBalance(data.result.value / 1e9) // Convert lamports to SOL
       }
