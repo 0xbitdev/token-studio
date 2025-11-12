@@ -1,4 +1,12 @@
 import { NextResponse } from "next/server"
+
+// CORS helper (allow configuring allowed origin via env)
+const CORS_ORIGIN = process.env.CORS_ALLOWED_ORIGIN || "*"
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": CORS_ORIGIN,
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
 import FormData from "form-data"
 import { Client } from "pg"
 import nacl from "tweetnacl"
@@ -43,7 +51,7 @@ export async function POST(req: Request) {
 
     const missing = validate(body)
     if (missing.length > 0) {
-      return NextResponse.json({ error: `Missing required fields: ${missing.join(", ")}` }, { status: 400 })
+      return NextResponse.json({ error: `Missing required fields: ${missing.join(", ")}` }, { status: 400, headers: CORS_HEADERS })
     }
 
   // Pump.fun API configuration
@@ -66,12 +74,12 @@ export async function POST(req: Request) {
 
         const verified = nacl.sign.detached.verify(new Uint8Array(msgBuf), new Uint8Array(sigBuf), new Uint8Array(pubKeyBuf))
         if (!verified) {
-          return NextResponse.json({ error: "Signature verification failed" }, { status: 401 })
+          return NextResponse.json({ error: "Signature verification failed" }, { status: 401, headers: CORS_HEADERS })
         }
         verificationResult = { ok: true, message: "Signature verified" }
       } catch (e: any) {
         console.error("signature verification error", e)
-        return NextResponse.json({ error: "Signature verification error: " + String(e?.message || e) }, { status: 401 })
+  return NextResponse.json({ error: "Signature verification error: " + String(e?.message || e) }, { status: 401, headers: CORS_HEADERS })
       }
     } else {
       verificationResult = { ok: true, message: "Private key provided; skipped signature verification" }
@@ -150,7 +158,7 @@ export async function POST(req: Request) {
 
     const text = await res.text()
     if (!res.ok) {
-      return NextResponse.json({ error: `Pump.fun API error: ${res.status} ${text}` }, { status: 502 })
+      return NextResponse.json({ error: `Pump.fun API error: ${res.status} ${text}` }, { status: 502, headers: CORS_HEADERS })
     }
 
     // try to parse json
@@ -196,14 +204,14 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ ok: true, result: json, recorded: { status, mint, txid }, verification: verificationResult })
+    return NextResponse.json({ ok: true, result: json, recorded: { status, mint, txid }, verification: verificationResult }, { headers: CORS_HEADERS })
   } catch (err: any) {
     console.error(err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
   }
 }
 
 // Allow preflight OPTIONS so browsers don't get 405 Method Not Allowed
 export async function OPTIONS(req: Request) {
-  return new Response(null, { status: 200 })
+  return new Response(null, { status: 200, headers: CORS_HEADERS })
 }

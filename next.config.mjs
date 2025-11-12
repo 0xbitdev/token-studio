@@ -8,13 +8,7 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
-  },
-  experimental: {
-    turbo: false, 
-  },
-  compiler: {
-    lightningcss: false,
-  }
+  } 
 }
 
 export default nextConfig

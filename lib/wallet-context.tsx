@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import * as React from "react"
 import { toast } from "sonner"
 
 
@@ -15,17 +15,23 @@ interface WalletContextType {
   signMessage: (message: string) => Promise<string | null>
 }
 
-// Use a non-null default using a type assertion so the Context.Provider type is stable
-const WalletContext = createContext<WalletContextType>({} as WalletContextType)
+// Provide a safe runtime error when consumers attempt to use the hook outside the provider.
+const throwMissingProvider = () => {
+  throw new Error("useWallet must be used within a WalletProvider")
+}
 
-export function WalletProvider({ children }: { children: ReactNode }) {
-  const [connected, setConnected] = useState(false)
-  const [publicKey, setPublicKey] = useState<string | null>(null)
-  const [walletType, setWalletType] = useState<"phantom" | "solflare" | null>(null)
-  const [connecting, setConnecting] = useState(false)
-  const [balance, setBalance] = useState(0) // Added balance state
+// Use `undefined` as the default value so TypeScript's Context typing is unambiguous
+// and the `Provider` component is recognized as a valid JSX component by the TSX checker.
+const WalletContext = React.createContext<WalletContextType | undefined>(undefined)
 
-  useEffect(() => {
+export function WalletProvider({ children }: { children: React.ReactNode }): React.ReactElement {
+  const [connected, setConnected] = React.useState(false)
+  const [publicKey, setPublicKey] = React.useState<string | null>(null)
+  const [walletType, setWalletType] = React.useState<"phantom" | "solflare" | null>(null)
+  const [connecting, setConnecting] = React.useState(false)
+  const [balance, setBalance] = React.useState(0) // Added balance state
+
+  React.useEffect(() => {
     // Check if already connected on mount
     const savedWallet = localStorage.getItem("walletType")
     const savedPublicKey = localStorage.getItem("walletPublicKey")
@@ -41,7 +47,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       // First, try to ask the injected wallet provider (Phantom / Solflare) for balance
       // This reduces reliance on public RPC endpoints that may return 403.
-      const provider = (window as any).solana || (window as any).solflare
+  const provider = (window as any).solana || (window as any).solflare
       if (provider) {
         try {
           // Some providers may expose a helper like getBalance(pubKey)
@@ -58,45 +64,39 @@ export function WalletProvider({ children }: { children: ReactNode }) {
             }
           }
 
-          // Many wallet providers implement a generic request proxy which will forward
-          // JSON-RPC calls to their configured RPC node. Try that next.
-          if (typeof provider.request === "function") {
-            const provResp = await provider.request({ method: "getBalance", params: [pubKey] })
-            // provResp might be number of lamports, or an object
-            if (provResp != null) {
-              // If provider returned JSON-RPC style { result: { value } }
-              const value = provResp?.result?.value ?? provResp?.value ?? provResp
-              if (typeof value === "number") {
-                setBalance(value / 1e9)
-                return
-              }
-            }
-          }
+          // Some providers may implement getBalance; we've already tried that above.
+          // Avoid calling `provider.request` in production because some wallet
+          // provider implementations throw `Unsupported path` for arbitrary JSON-RPC
+          // forwarding from dapps. We rely on the server-side proxy as a robust fallback.
         } catch (provErr) {
           console.warn("Wallet provider balance fetch failed, falling back to RPC:", provErr)
           // continue to fallback RPC below
         }
       }
 
-      // Try server-side proxy first (avoids exposing API key and reduces public RPC 403 rates)
-      try {
-        const proxyRes = await fetch("/api/rpc/balance", {
+      // Primary: use the generic server-side proxy (/api/proxy) so all RPC traffic
+      // originates from your domain and uses server-side RPC keys.
+  try {
+        const rpcPayload = { jsonrpc: "2.0", id: 1, method: "getBalance", params: [pubKey] }
+  const proxyRes = await fetch("/api/proxy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ publicKey: pubKey }),
+          body: JSON.stringify(rpcPayload),
         })
         const proxyJson = await proxyRes.json()
         if (proxyRes.ok && proxyJson?.result) {
-          // Our proxy returns { ok: true, status, result: <rpcResponse> }
+          // proxyJson.result is the parsed RPC response from the upstream node
           const rpcData = proxyJson.result
           const value = rpcData?.result?.value ?? rpcData?.value ?? rpcData?.raw?.result?.value ?? rpcData?.raw?.value
           if (typeof value === "number") {
             setBalance(value / 1e9)
             return
           }
+        } else {
+          console.warn("/api/proxy returned non-ok", proxyRes.status, proxyJson)
         }
-      } catch (proxyErr) {
-        console.warn("Server proxy /api/rpc/balance failed, falling back to client RPC:", proxyErr)
+  } catch (proxyErr) {
+        console.warn("Server proxy /api/proxy failed, falling back to client RPC:", proxyErr)
         // continue to client RPC fallback
       }
 
@@ -104,7 +104,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Public endpoints may be rate-limited or return 403; allow overriding.
       const rpcUrl = (process.env.NEXT_PUBLIC_SOLANA_RPC as string) || "https://api.mainnet-beta.solana.com"
 
-      const response = await fetch(rpcUrl, {
+  const response = await fetch(rpcUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -176,7 +176,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       })
 
       // Connect to wallet with timeout
-      const connectPromise = provider.connect({ onlyIfTrusted: false })
+  const connectPromise = provider.connect({ onlyIfTrusted: false })
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Connection timeout")), 60000),
       )
@@ -193,7 +193,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const message = `Sign this message to authenticate with Launch Token\n\nWallet: ${pubKey.slice(0, 8)}...${pubKey.slice(-8)}\nTimestamp: ${Date.now()}\n\nThis signature is free and will not send any transaction.`
       const encodedMessage = new TextEncoder().encode(message)
 
-      const signPromise = provider.signMessage(encodedMessage, "utf8")
+  const signPromise = provider.signMessage(encodedMessage, "utf8")
       const signTimeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error("Signature timeout")), 60000),
       )
@@ -213,7 +213,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
           id: "wallet-connect",
         })
       }
-    } catch (error: any) {
+  } catch (error: any) {
       console.error("Wallet connection error:", error)
       toast.dismiss("wallet-connect")
 
@@ -285,6 +285,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useWallet() {
-  return useContext(WalletContext)
+export function useWallet(): WalletContextType {
+  const ctx = React.useContext(WalletContext)
+  if (!ctx) {
+    // Provide the same helpful runtime error we used to, but rely on the
+    // `undefined` sentinel so TypeScript and the JSX checker remain happy.
+    throwMissingProvider()
+  }
+  return ctx
 }

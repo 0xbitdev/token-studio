@@ -1,4 +1,11 @@
 import { NextResponse } from "next/server"
+// CORS helper (allow configuring allowed origin via env)
+const CORS_ORIGIN = process.env.CORS_ALLOWED_ORIGIN || "*"
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": CORS_ORIGIN,
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
 import sharp from "sharp"
 
 type ReqBody = {
@@ -168,7 +175,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as ReqBody
 
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500 })
+  if (!apiKey) return NextResponse.json({ error: "OpenAI API key not configured" }, { status: 500, headers: CORS_HEADERS })
 
     // Support image-only requests (regenerate a single image) to avoid calling the chat model.
     const isImageOnly = (body as any).action === "image-only"
@@ -248,14 +255,14 @@ export async function POST(req: Request) {
       rawParsed: parsed,
     }
 
-    return NextResponse.json(resp)
+    return NextResponse.json(resp, { headers: CORS_HEADERS })
   } catch (err: any) {
     console.error(err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
   }
 }
 
 // Respond to CORS preflight from browsers; returning 200 prevents 405 in some deployments
 export async function OPTIONS(req: Request) {
-  return new Response(null, { status: 200 })
+  return new Response(null, { status: 200, headers: CORS_HEADERS })
 }
