@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Info, RefreshCw, Upload, Loader2, ExternalLink, CheckCircle2, AlertCircle } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -34,6 +33,38 @@ export default function GeneratePage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [deployedTokenAddress, setDeployedTokenAddress] = useState("")
   const [showAmountError, setShowAmountError] = useState(false)
+  const [showStyleDialog, setShowStyleDialog] = useState(false)
+  const [showToneDialog, setShowToneDialog] = useState(false)
+
+  const styleOptions = [
+    { value: "meme", label: "Meme" },
+    { value: "utility", label: "Utility" },
+    { value: "waifu", label: "Waifu" },
+    { value: "experimental", label: "Experimental" },
+    { value: "art", label: "Art / Creative" },
+    { value: "gaming", label: "Gaming" },
+    { value: "defi", label: "DeFi / Finance" },
+    { value: "nft", label: "NFT Collection" },
+    { value: "community", label: "Community Driven" },
+    { value: "ai", label: "AI / Tech" },
+    { value: "culture", label: "Culture / Movement" },
+    { value: "charity", label: "Charity / Social Good" },
+  ]
+
+  const toneOptions = [
+    "chill",
+    "degen",
+    "serious",
+    "ironic",
+    "hype",
+    "wholesome",
+    "edgy",
+    "mysterious",
+    "professional",
+    "playful",
+    "bullish",
+    "zen",
+  ]
 
   const handleGenerate = () => {
     setIsGenerating(true)
@@ -99,55 +130,32 @@ export default function GeneratePage() {
             <div className="flex flex-col gap-4">
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">STYLE</Label>
-                <Select value={style} onValueChange={setStyle}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="meme">Meme</SelectItem>
-                    <SelectItem value="utility">Utility</SelectItem>
-                    <SelectItem value="waifu">Waifu</SelectItem>
-                    <SelectItem value="experimental">Experimental</SelectItem>
-                    <SelectItem value="art">Art / Creative</SelectItem>
-                    <SelectItem value="gaming">Gaming</SelectItem>
-                    <SelectItem value="defi">DeFi / Finance</SelectItem>
-                    <SelectItem value="nft">NFT Collection</SelectItem>
-                    <SelectItem value="community">Community Driven</SelectItem>
-                    <SelectItem value="ai">AI / Tech</SelectItem>
-                    <SelectItem value="culture">Culture / Movement</SelectItem>
-                    <SelectItem value="charity">Charity / Social Good</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowStyleDialog(true)}
+                  className="w-full justify-between bg-transparent"
+                >
+                  <span className="capitalize">
+                    {styleOptions.find((s) => s.value === style)?.label || "Select style"}
+                  </span>
+                  <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-wide text-muted-foreground">TONE</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {[
-                    "chill",
-                    "degen",
-                    "serious",
-                    "ironic",
-                    "hype",
-                    "wholesome",
-                    "edgy",
-                    "mysterious",
-                    "professional",
-                    "playful",
-                    "bullish",
-                    "zen",
-                  ].map((t) => (
-                    <Button
-                      key={t}
-                      variant={tone === t ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setTone(t)}
-                      className="capitalize"
-                    >
-                      {t}
-                    </Button>
-                  ))}
-                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowToneDialog(true)}
+                  className="w-full justify-between bg-transparent"
+                >
+                  <span className="capitalize">{tone}</span>
+                  <svg className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
               </div>
 
               <div className="flex items-center gap-2">
@@ -304,6 +312,64 @@ export default function GeneratePage() {
           </Card>
         )}
       </div>
+
+      {/* Style Dialog */}
+      <Dialog open={showStyleDialog} onOpenChange={setShowStyleDialog}>
+        <DialogContent className="sm:max-w-lg max-sm:fixed max-sm:left-0 max-sm:right-0 max-sm:bottom-0 max-sm:top-auto max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:border-b-0 max-sm:w-screen max-sm:max-w-none max-sm:m-0 max-sm:animate-in max-sm:slide-in-from-bottom-full max-sm:data-[state=closed]:slide-out-to-bottom-full custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle>Select Style</DialogTitle>
+            <DialogDescription>Choose a style that best represents your token</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-4 max-h-[60vh] overflow-y-auto custom-scrollbar px-1">
+            {styleOptions.map((option) => (
+              <Button
+                key={option.value}
+                variant="outline"
+                onClick={() => {
+                  setStyle(option.value)
+                  setShowStyleDialog(false)
+                }}
+                className={`justify-start h-auto py-3 px-4 transition-all text-sm font-medium ${
+                  style === option.value
+                    ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground shadow-sm"
+                    : "bg-card hover:bg-accent hover:text-accent-foreground border-border"
+                }`}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tone Dialog */}
+      <Dialog open={showToneDialog} onOpenChange={setShowToneDialog}>
+        <DialogContent className="sm:max-w-lg max-sm:fixed max-sm:left-0 max-sm:right-0 max-sm:bottom-0 max-sm:top-auto max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:border-b-0 max-sm:w-screen max-sm:max-w-none max-sm:m-0 max-sm:animate-in max-sm:slide-in-from-bottom-full max-sm:data-[state=closed]:slide-out-to-bottom-full custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle>Select Tone</DialogTitle>
+            <DialogDescription>Choose the vibe and personality for your token</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-4 max-h-[60vh] overflow-y-auto custom-scrollbar px-1">
+            {toneOptions.map((option) => (
+              <Button
+                key={option}
+                variant="outline"
+                onClick={() => {
+                  setTone(option)
+                  setShowToneDialog(false)
+                }}
+                className={`capitalize h-auto py-3 px-4 transition-all text-sm font-medium ${
+                  tone === option
+                    ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground shadow-sm"
+                    : "bg-card hover:bg-accent hover:text-accent-foreground border-border"
+                }`}
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dev Buy Dialog */}
       <Dialog open={showDevBuyDialog} onOpenChange={setShowDevBuyDialog}>
