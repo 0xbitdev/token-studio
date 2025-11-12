@@ -1,5 +1,6 @@
 "use client"
 
+import { AccessControl } from "@/components/access-control"
 import { AppShell } from "@/components/layout/app-shell"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -98,102 +99,104 @@ const statusColors = {
 export default function TrendingPage() {
   return (
     <AppShell>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight flex items-center gap-3">
-              <Flame className="w-8 h-8 text-orange-500" />
-              Trending Narratives
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Discover viral narratives and trending themes in the crypto space
-            </p>
-          </div>
-        </div>
-
-        {/* Trending Cards */}
-        <div className="space-y-6">
-          {trendingNarratives.map((narrative, index) => (
-            <Card key={narrative.id} className="p-6 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="space-y-4">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="text-xl md:text-2xl font-bold">{narrative.title}</h3>
-                      <Badge className={`${statusColors[narrative.status as keyof typeof statusColors]} text-xs`}>
-                        {narrative.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{narrative.category}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="text-3xl font-bold text-primary">{narrative.trendScore}</div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wide">Trend Score</div>
-                  </div>
-                </div>
-
-                {/* Gradient Bar */}
-                <div className="h-2 rounded-full bg-gradient-to-r overflow-hidden opacity-20">
-                  <div
-                    className={`h-full bg-gradient-to-r ${narrative.color}`}
-                    style={{ width: `${narrative.trendScore}%` }}
-                  />
-                </div>
-
-                {/* Description */}
-                <p className="text-muted-foreground leading-relaxed">{narrative.description}</p>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2">
-                  {narrative.tags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Stats */}
-                <div className="flex flex-wrap items-center gap-4 md:gap-6 pt-2 border-t border-border">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-semibold">{narrative.engagement}</span>
-                    <span className="text-muted-foreground">engagement</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Trending for {narrative.duration}</span>
-                  </div>
-                  <div className="ml-auto">
-                    <Button variant="outline" size="sm" className="gap-2 bg-transparent">
-                      <TrendingUp className="w-4 h-4" />
-                      Use This Narrative
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        {/* Info Card */}
-        <Card className="p-6 bg-primary/5 border-primary/20">
-          <div className="flex items-start gap-4">
-            <div className="rounded-full bg-primary/10 p-3 flex-shrink-0">
-              <TrendingUp className="w-6 h-6 text-primary" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-bold text-lg">How to Use Trending Narratives</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Use these trending narratives to align your token creation with current market sentiment. Click "Use
-                This Narrative" to pre-fill the generate page with relevant themes, or simply use these insights to
-                craft your own unique angle on trending topics.
+      <AccessControl pageName="trending">
+        <div className="space-y-8">
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight flex items-center gap-3">
+                <Flame className="w-8 h-8 text-orange-500" />
+                Trending Narratives
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Discover viral narratives and trending themes in the crypto space
               </p>
             </div>
           </div>
-        </Card>
-      </div>
+
+          {/* Trending Cards */}
+          <div className="space-y-6">
+            {trendingNarratives.map((narrative, index) => (
+              <Card key={narrative.id} className="p-6 shadow-lg hover:shadow-xl transition-shadow">
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="text-xl md:text-2xl font-bold">{narrative.title}</h3>
+                        <Badge className={`${statusColors[narrative.status as keyof typeof statusColors]} text-xs`}>
+                          {narrative.status}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{narrative.category}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-3xl font-bold text-primary">{narrative.trendScore}</div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wide">Trend Score</div>
+                    </div>
+                  </div>
+
+                  {/* Gradient Bar */}
+                  <div className="h-2 rounded-full bg-gradient-to-r overflow-hidden opacity-20">
+                    <div
+                      className={`h-full bg-gradient-to-r ${narrative.color}`}
+                      style={{ width: `${narrative.trendScore}%` }}
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-muted-foreground leading-relaxed">{narrative.description}</p>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {narrative.tags.map((tag) => (
+                      <Badge key={tag} variant="outline" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex flex-wrap items-center gap-4 md:gap-6 pt-2 border-t border-border">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-semibold">{narrative.engagement}</span>
+                      <span className="text-muted-foreground">engagement</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Trending for {narrative.duration}</span>
+                    </div>
+                    <div className="ml-auto">
+                      <Button variant="outline" size="sm" className="gap-2 bg-transparent">
+                        <TrendingUp className="w-4 h-4" />
+                        Use This Narrative
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Info Card */}
+          <Card className="p-6 bg-primary/5 border-primary/20">
+            <div className="flex items-start gap-4">
+              <div className="rounded-full bg-primary/10 p-3 flex-shrink-0">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-bold text-lg">How to Use Trending Narratives</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Use these trending narratives to align your token creation with current market sentiment. Click "Use
+                  This Narrative" to pre-fill the generate page with relevant themes, or simply use these insights to
+                  craft your own unique angle on trending topics.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </AccessControl>
     </AppShell>
   )
 }

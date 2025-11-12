@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 lg:pl-64">
         <Topbar />
         <main className="overflow-auto h-[calc(100vh-4rem)]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</div>
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-8">{children}</div>
         </main>
       </div>
     </div>
