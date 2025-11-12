@@ -70,12 +70,12 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-green-500 flex items-center justify-center shadow-sm">
-            <Sparkles className="w-6 h-6 text-white" strokeWidth={2.5} />
+          <div className="w-12 h-12 rounded-2xl overflow-hidden shadow-sm">
+            <img src="/logo.jpg" alt="Launch Token Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <div className="text-lg font-bold tracking-tight text-foreground">Launch</div>
-            <div className="text-xs font-medium tracking-wider text-green-600 uppercase">Token</div>
+            <div className="text-lg tracking-tight text-foreground font-black">Launch</div>
+            <div className="text-xs font-medium tracking-wider text-green-600 uppercase">Token.DEV</div>
           </div>
         </div>
       </div>

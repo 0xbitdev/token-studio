@@ -114,7 +114,7 @@ export function AccessControl({ children, pageName }: AccessControlProps) {
           <p className="text-sm text-muted-foreground text-center">Don't have an access code?</p>
           <div className="space-y-2 text-xs text-muted-foreground">
             <p>• Contact the team to get your exclusive access code</p>
-            <p>• Access codes are available for premium members only</p>
+            <p>��� Access codes are available for premium members only</p>
             <p>• Each code provides permanent access to this feature</p>
           </div>
         </div>
