@@ -398,7 +398,7 @@ export default function AboutPage() {
 
 function ContractAddressSection() {
   const [copied, setCopied] = useState(false)
-  const contractAddress = "xxxxxxxxxxxxxxxxxxxxpump"
+  const contractAddress = "BdEA91L1pHWRPczxhQxNbG9pYj6Skz4PZtarsBkYpump"
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(contractAddress)
