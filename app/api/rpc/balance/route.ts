@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
 
+// Permissive CORS headers so front-end on a custom domain can call this endpoint
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+
 type ReqBody = {
   publicKey?: string
 }
@@ -9,7 +16,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as ReqBody
     const publicKey = body?.publicKey
     if (!publicKey) {
-      return NextResponse.json({ error: "Missing publicKey in request body" }, { status: 400 })
+      return NextResponse.json({ error: "Missing publicKey in request body" }, { status: 400, headers: CORS_HEADERS })
     }
 
     // Server-side RPC URL and optional API key
@@ -18,8 +25,6 @@ export async function POST(req: Request) {
 
     const headers: Record<string, string> = { "Content-Type": "application/json" }
     if (rpcKey) {
-      // try Authorization Bearer first; many providers accept it. If your provider needs a different header,
-      // set SOLANA_RPC_KEY and adapt here.
       headers["Authorization"] = `Bearer ${rpcKey}`
     }
 
@@ -38,16 +43,16 @@ export async function POST(req: Request) {
     }
 
     if (!rpcRes.ok) {
-      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502 })
+      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502, headers: CORS_HEADERS })
     }
 
-    return NextResponse.json({ ok: true, status: rpcRes.status, result: data })
+    return NextResponse.json({ ok: true, status: rpcRes.status, result: data }, { headers: CORS_HEADERS })
   } catch (err: any) {
     console.error("/api/rpc/balance error", err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
   }
 }
 
 export async function OPTIONS(req: Request) {
-  return new Response(null, { status: 200 })
+  return new Response(null, { status: 200, headers: CORS_HEADERS })
 }

@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server"
 
+// Permissive CORS for cross-origin usage (allows any origin). This mirrors local dev behavior
+// and is intentionally permissive so the API is accessible from your custom domain.
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.text()
-  if (!body) return NextResponse.json({ error: "Empty request body" }, { status: 400 })
+  if (!body) return NextResponse.json({ error: "Empty request body" }, { status: 400, headers: CORS_HEADERS })
 
     // Logging for debugging on server (Vercel logs). Keep logs concise.
     try {
@@ -36,16 +44,16 @@ export async function POST(req: Request) {
     }
 
     if (!rpcRes.ok) {
-      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502 })
+      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502, headers: CORS_HEADERS })
     }
 
-    return NextResponse.json({ ok: true, status: rpcRes.status, result: data })
+    return NextResponse.json({ ok: true, status: rpcRes.status, result: data }, { headers: CORS_HEADERS })
   } catch (err: any) {
     console.error("/api/proxy error", err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
   }
 }
 
 export async function OPTIONS() {
-  return new Response(null, { status: 200 })
+  return new Response(null, { status: 200, headers: CORS_HEADERS })
 }
