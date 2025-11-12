@@ -1,17 +1,16 @@
-import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ArrowRight, Sparkles, Rocket, Shield, Zap, TrendingUp, Lock } from "lucide-react"
+import { ArrowRight, Sparkles, Rocket, Shield, Zap, TrendingUp, Lock, Info } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { redirect } from "next/navigation"
 
 export default function HomePage() {
   redirect("/app")
 
-  // The rest of the code here is kept for reference but not used due to the redirect
+  // Navigation
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
       <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -30,8 +29,14 @@ export default function HomePage() {
               >
                 FEATURES
               </Link>
+              <Button asChild variant="ghost" size="sm" className="rounded-full gap-2">
+                <Link href="/about">
+                  <Info className="w-4 h-4" />
+                  <span className="hidden sm:inline">ABOUT</span>
+                </Link>
+              </Button>
               <Button asChild className="rounded-full bg-primary hover:bg-[#22C55E]">
-                <Link href="/app/generate">LAUNCH APP</Link>
+                <Link href="/app">LAUNCH APP</Link>
               </Button>
             </div>
           </div>

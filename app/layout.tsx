@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
+import { WalletProvider } from "@/lib/wallet-context"
+import { Toaster as SonnerToaster } from "sonner"
 
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 
@@ -40,8 +42,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${spaceGrotesk.className} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          {children}
-          <Toaster />
+          <WalletProvider>
+            {children}
+            <Toaster />
+            <SonnerToaster position="top-right" richColors />
+          </WalletProvider>
         </ThemeProvider>
         <Analytics />
       </body>

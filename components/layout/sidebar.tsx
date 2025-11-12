@@ -54,10 +54,9 @@ const devToolsMenu = {
 }
 
 const socialLinks = [
-  { name: "X", href: "https://twitter.com", icon: XIcon },
-  { name: "Telegram", href: "https://telegram.org", icon: MessageCircle },
-  { name: "Discord", href: "https://discord.com", icon: DiscordIcon },
-  { name: "Docs", href: "#", icon: BookOpen },
+  { name: "X", href: "https://x.com/launchtokendev", icon: XIcon, external: true },
+  { name: "Telegram", href: "https://t.me/launchtokendev", icon: MessageCircle, external: true },
+  { name: "Docs", href: "/docs", icon: BookOpen, external: false },
 ]
 
 export function Sidebar() {
@@ -74,8 +73,8 @@ export function Sidebar() {
             <img src="/logo.jpg" alt="Launch Token Logo" className="w-full h-full object-cover" />
           </div>
           <div>
-            <div className="text-lg tracking-tight text-foreground font-black">Launch</div>
-            <div className="text-xs font-medium tracking-wider text-green-600 uppercase">Token.DEV</div>
+            <div className="text-lg tracking-tight text-foreground font-black">LaunchToken</div>
+            <div className="text-xs font-medium tracking-wider text-green-600 uppercase">DEVNET BETA V0.02.1</div>
           </div>
         </div>
       </div>
@@ -169,18 +168,29 @@ export function Sidebar() {
 
         <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Connect</div>
         <div className="flex items-center gap-2">
-          {socialLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-500/20 transition-all duration-200"
-              title={link.name}
-            >
-              <link.icon className="w-5 h-5" strokeWidth={2} />
-            </a>
-          ))}
+          {socialLinks.map((link) =>
+            link.external ? (
+              <a
+                key={link.name}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-500/20 transition-all duration-200"
+                title={link.name}
+              >
+                <link.icon className="w-5 h-5" strokeWidth={2} />
+              </a>
+            ) : (
+              <Link
+                key={link.name}
+                href={link.href}
+                className="flex items-center justify-center w-10 h-10 rounded-lg text-muted-foreground hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-500/20 transition-all duration-200"
+                title={link.name}
+              >
+                <link.icon className="w-5 h-5" strokeWidth={2} />
+              </Link>
+            ),
+          )}
         </div>
       </div>
     </div>
