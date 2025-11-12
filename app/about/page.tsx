@@ -35,13 +35,13 @@ export default function AboutPage() {
                 href="#features"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
               >
-                FEATURES
+                {""}
               </Link>
               <Link
                 href="#roadmap"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
               >
-                ROADMAP
+                {""}
               </Link>
               <Button asChild className="rounded-full bg-primary hover:bg-[#22C55E]">
                 <Link href="/app">GO TO APP</Link>
@@ -386,19 +386,9 @@ export default function AboutPage() {
       {/* Footer */}
       <footer className="border-t border-border py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-center">
             <div className="text-sm text-muted-foreground">© 2025 Launch Token. Not financial advice.</div>
-            <div className="flex gap-6 text-sm">
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                X
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                TELEGRAM
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">
-                DOCS
-              </a>
-            </div>
+            
           </div>
         </div>
       </footer>
