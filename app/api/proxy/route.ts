@@ -1,20 +1,9 @@
 import { NextResponse } from "next/server"
 
-// Generic server-side proxy for forwarding JSON-RPC requests to the configured RPC.
-// This lets the client send arbitrary JSON-RPC payloads to /api/proxy and have the
-// server forward them to SOLANA_RPC_URL while keeping API keys secret.
-
-const CORS_ORIGIN = process.env.CORS_ALLOWED_ORIGIN || "*"
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": CORS_ORIGIN,
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.text()
-    if (!body) return NextResponse.json({ error: "Empty request body" }, { status: 400, headers: CORS_HEADERS })
+  if (!body) return NextResponse.json({ error: "Empty request body" }, { status: 400 })
 
     // Logging for debugging on server (Vercel logs). Keep logs concise.
     try {
@@ -47,16 +36,16 @@ export async function POST(req: Request) {
     }
 
     if (!rpcRes.ok) {
-      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502, headers: CORS_HEADERS })
+      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502 })
     }
 
-    return NextResponse.json({ ok: true, status: rpcRes.status, result: data }, { headers: CORS_HEADERS })
+    return NextResponse.json({ ok: true, status: rpcRes.status, result: data })
   } catch (err: any) {
     console.error("/api/proxy error", err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
 
 export async function OPTIONS() {
-  return new Response(null, { status: 200, headers: CORS_HEADERS })
+  return new Response(null, { status: 200 })
 }

@@ -1,13 +1,5 @@
 import { NextResponse } from "next/server"
 
-// CORS helper (allow configuring allowed origin via env)
-const CORS_ORIGIN = process.env.CORS_ALLOWED_ORIGIN || "*"
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": CORS_ORIGIN,
-  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-}
-
 type ReqBody = {
   publicKey?: string
 }
@@ -17,7 +9,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as ReqBody
     const publicKey = body?.publicKey
     if (!publicKey) {
-      return NextResponse.json({ error: "Missing publicKey in request body" }, { status: 400, headers: CORS_HEADERS })
+      return NextResponse.json({ error: "Missing publicKey in request body" }, { status: 400 })
     }
 
     // Server-side RPC URL and optional API key
@@ -46,16 +38,16 @@ export async function POST(req: Request) {
     }
 
     if (!rpcRes.ok) {
-      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502, headers: CORS_HEADERS })
+      return NextResponse.json({ error: `RPC provider error: ${rpcRes.status}`, details: data }, { status: 502 })
     }
 
-    return NextResponse.json({ ok: true, status: rpcRes.status, result: data }, { headers: CORS_HEADERS })
+    return NextResponse.json({ ok: true, status: rpcRes.status, result: data })
   } catch (err: any) {
     console.error("/api/rpc/balance error", err)
-    return NextResponse.json({ error: String(err?.message || err) }, { status: 500, headers: CORS_HEADERS })
+    return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
 
 export async function OPTIONS(req: Request) {
-  return new Response(null, { status: 200, headers: CORS_HEADERS })
+  return new Response(null, { status: 200 })
 }
