@@ -12,6 +12,9 @@ const nextConfig = {
   experimental: {
     turbo: false, 
   },
+  compiler: {
+    lightningcss: false,
+  }
 }
 
 export default nextConfig
