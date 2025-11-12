@@ -202,3 +202,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
+
+// Allow preflight OPTIONS so browsers don't get 405 Method Not Allowed
+export async function OPTIONS(req: Request) {
+  return new Response(null, { status: 200 })
+}

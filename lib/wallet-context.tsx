@@ -15,7 +15,8 @@ interface WalletContextType {
   signMessage: (message: string) => Promise<string | null>
 }
 
-const WalletContext = createContext<WalletContextType | undefined>(undefined)
+// Use a non-null default using a type assertion so the Context.Provider type is stable
+const WalletContext = createContext<WalletContextType>({} as WalletContextType)
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [connected, setConnected] = useState(false)
@@ -285,9 +286,5 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 }
 
 export function useWallet() {
-  const context = useContext(WalletContext)
-  if (context === undefined) {
-    throw new Error("useWallet must be used within a WalletProvider")
-  }
-  return context
+  return useContext(WalletContext)
 }

@@ -47,3 +47,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
+
+export async function OPTIONS(req: Request) {
+  return new Response(null, { status: 200 })
+}

@@ -254,3 +254,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: String(err?.message || err) }, { status: 500 })
   }
 }
+
+// Respond to CORS preflight from browsers; returning 200 prevents 405 in some deployments
+export async function OPTIONS(req: Request) {
+  return new Response(null, { status: 200 })
+}
