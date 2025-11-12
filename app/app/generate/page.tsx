@@ -118,34 +118,50 @@ export default function GeneratePage() {
         coverPrompt: coverPrompt || undefined,
       }),
     })
-      .then(async (res) => {
-        const json = await res.json()
-        if (!res.ok) throw new Error(json?.error || "Generation failed")
+        .then(async (res) => {
+          // Safely handle non-JSON or empty responses to avoid crashing when
+          // upstream returns 405/empty body. Read as text then attempt JSON parse.
+          const text = await res.text()
+          let json: any = null
+          if (text) {
+            try {
+              json = JSON.parse(text)
+            } catch (parseErr) {
+              console.warn("/api/generate: response not JSON:", parseErr, text)
+            }
+          }
 
-        // set images if available
-        if (json.pictureImage) setPictureImage(json.pictureImage)
-        if (json.coverImage) setCoverImage(json.coverImage)
+          if (!res.ok) {
+            const msg = (json && json.error) || text || res.statusText || `HTTP ${res.status}`
+            throw new Error(msg)
+          }
 
-        // persist prompts returned from server so we can regenerate later
-        if (json.picturePrompt) setPicturePrompt(json.picturePrompt)
-        if (json.coverPrompt) setCoverPrompt(json.coverPrompt)
+          if (!json) throw new Error("Empty response from server")
 
-        // set metadata
-        if (json.tokenName) setTokenName(json.tokenName)
-        if (json.symbol) setSymbol(json.symbol)
-        if (json.shortDescription) setShortDescription(json.shortDescription)
-        if (json.longDescription) setLongDescription(json.longDescription)
+          // set images if available
+          if (json.pictureImage) setPictureImage(json.pictureImage)
+          if (json.coverImage) setCoverImage(json.coverImage)
 
-  // set social suggestions
-  if (json.suggestedXBio) setSuggestedXBio(json.suggestedXBio)
-  if (json.suggestedFirstTweet) setSuggestedFirstTweet(json.suggestedFirstTweet)
+          // persist prompts returned from server so we can regenerate later
+          if (json.picturePrompt) setPicturePrompt(json.picturePrompt)
+          if (json.coverPrompt) setCoverPrompt(json.coverPrompt)
 
-  // set any image errors for UI banner
-  setPictureError(json.pictureError || "")
-  setCoverError(json.coverError || "")
+          // set metadata
+          if (json.tokenName) setTokenName(json.tokenName)
+          if (json.symbol) setSymbol(json.symbol)
+          if (json.shortDescription) setShortDescription(json.shortDescription)
+          if (json.longDescription) setLongDescription(json.longDescription)
 
-        setShowPreview(true)
-      })
+          // set social suggestions
+          if (json.suggestedXBio) setSuggestedXBio(json.suggestedXBio)
+          if (json.suggestedFirstTweet) setSuggestedFirstTweet(json.suggestedFirstTweet)
+
+          // set any image errors for UI banner
+          setPictureError(json.pictureError || "")
+          setCoverError(json.coverError || "")
+
+          setShowPreview(true)
+        })
       .catch((err) => {
         console.error(err)
         toast.error("Generate failed", { description: String(err?.message || err) })
@@ -189,8 +205,16 @@ export default function GeneratePage() {
       }),
     })
       .then(async (res) => {
-        const json = await res.json()
-        if (!res.ok) throw new Error(json?.error || "Picture regeneration failed")
+        const text = await res.text()
+        let json: any = null
+        if (text) {
+          try { json = JSON.parse(text) } catch (parseErr) { console.warn("/api/generate (picture): response not JSON", parseErr, text) }
+        }
+        if (!res.ok) {
+          const msg = (json && json.error) || text || res.statusText || `HTTP ${res.status}`
+          throw new Error(msg)
+        }
+        if (!json) throw new Error("Empty response from server")
         if (json.pictureImage) setPictureImage(json.pictureImage)
         setPictureError(json.pictureError || "")
         if (json.picturePrompt) setPicturePrompt(json.picturePrompt)
@@ -236,8 +260,16 @@ export default function GeneratePage() {
       }),
     })
       .then(async (res) => {
-        const json = await res.json()
-        if (!res.ok) throw new Error(json?.error || "Cover regeneration failed")
+        const text = await res.text()
+        let json: any = null
+        if (text) {
+          try { json = JSON.parse(text) } catch (parseErr) { console.warn("/api/generate (cover): response not JSON", parseErr, text) }
+        }
+        if (!res.ok) {
+          const msg = (json && json.error) || text || res.statusText || `HTTP ${res.status}`
+          throw new Error(msg)
+        }
+        if (!json) throw new Error("Empty response from server")
         if (json.coverImage) setCoverImage(json.coverImage)
         setCoverError(json.coverError || "")
         if (json.coverPrompt) setCoverPrompt(json.coverPrompt)
