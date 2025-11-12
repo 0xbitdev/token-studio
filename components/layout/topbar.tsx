@@ -189,7 +189,7 @@ export function Topbar() {
               <div className="flex items-center gap-2 p-3 rounded-lg bg-muted">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center overflow-hidden">
                   <Image
-                    src="/solana-logo.jpg"
+                    src="/images/design-mode/Solana_logo(1).png"
                     alt="Solana"
                     width={24}
                     height={24}
