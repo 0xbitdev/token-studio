@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { toast } from "sonner"
+import { getSolBalance } from "./utils"
 
 interface WalletContextType {
   connected: boolean
@@ -37,20 +38,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const fetchBalance = async (pubKey: string) => {
     try {
-      const response = await fetch(`https://api.mainnet-beta.solana.com`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "getBalance",
-          params: [pubKey],
-        }),
-      })
-      const data = await response.json()
-      if (data.result?.value) {
-        setBalance(data.result.value / 1e9) // Convert lamports to SOL
-      }
+      // allowWalletPrompt will try to prompt the injected wallet provider if RPC returns 403
+      const sol = await getSolBalance(pubKey, { allowWalletPrompt: true })
+      setBalance(sol)
     } catch (error) {
       console.error("Failed to fetch balance:", error)
     }

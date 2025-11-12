@@ -12,24 +12,23 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Launch Token - Create Tokens for Pump.fun",
-  description: "AI-powered token creation and deployment for Pump.fun creators",
-  generator: "v0.app",
+  description: "AI-powered token creation and deployment for Pump.fun creators", 
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
+        url: "/favicon-96x96.png",
         media: "(prefers-color-scheme: light)",
       },
       {
-        url: "/icon-dark-32x32.png",
+        url: "/favicon-96x96.png",
         media: "(prefers-color-scheme: dark)",
       },
       {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: "/favicon.ico",
+        type: "image/x-icon",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: "/apple-touch-icon.png",
   },
 }
 

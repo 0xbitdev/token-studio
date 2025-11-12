@@ -17,6 +17,8 @@ export function Topbar() {
   const [showAccountDialog, setShowAccountDialog] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
+  // Format balance safely (handles undefined/NaN)
+  const formattedBalance = typeof balance === "number" && !Number.isNaN(balance) ? balance.toFixed(4) : "0.0000"
 
   const handleCopyAddress = () => {
     if (publicKey) {
@@ -67,7 +69,7 @@ export function Topbar() {
                 </div>
                 {showBalance ? (
                   <>
-                    <span className="text-sm font-semibold">{balance.toFixed(4)}</span>
+                    <span className="text-sm font-semibold">{formattedBalance}</span>
                     <span className="text-xs text-muted-foreground">SOL</span>
                   </>
                 ) : (
@@ -197,7 +199,7 @@ export function Topbar() {
                   />
                 </div>
                 {showBalance ? (
-                  <span className="text-lg font-semibold">{balance.toFixed(4)} SOL</span>
+                  <span className="text-lg font-semibold">{formattedBalance} SOL</span>
                 ) : (
                   <span className="text-lg font-semibold">•••• SOL</span>
                 )}
